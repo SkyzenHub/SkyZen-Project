@@ -1,4 +1,4 @@
--- SKYZEN TOOLKIT: AUTO COMBAT & SKILLS (TARGET FIXED)
+-- SKYZEN TOOLKIT: FINAL CORRECTED UNLOCKEYE
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -14,7 +14,7 @@ local GREEN = Color3.fromRGB(85, 223, 155)
 local WHITE = Color3.new(1, 1, 1)
 local OFFTRACK = Color3.fromRGB(50, 45, 55)
 
--- ===== helper =====
+-- ===== Helper UI =====
 local function new(class, props, parent)
     local o = Instance.new(class)
     for k, v in pairs(props) do o[k] = v end
@@ -30,7 +30,7 @@ local function label(parent, text, size, color, font, x)
     }, parent)
 end
 
--- ===== GUI utama =====
+-- ===== UI Initialization =====
 local playerGui = lp:WaitForChild("PlayerGui")
 if type(gethui) == "function" then
     local ok, h = pcall(gethui)
@@ -44,7 +44,7 @@ end)
 local gui = new("ScreenGui", {Name = "SkyzenToolkit", ResetOnSpawn = false, DisplayOrder = 999}, playerGui)
 
 local main = new("Frame", {
-    Size = UDim2.new(0, 330, 0, 420), Position = UDim2.new(0.5, -165, 0.5, -210),
+    Size = UDim2.new(0, 330, 0, 440), Position = UDim2.new(0.5, -165, 0.5, -220),
     BackgroundColor3 = BG, Active = true,
 }, gui)
 corner(main, 13)
@@ -54,7 +54,7 @@ new("UIGradient", {
     Color = ColorSequence.new(Color3.fromRGB(22, 16, 26), Color3.fromRGB(9, 7, 11)),
 }, main)
 
--- header
+-- Header UI
 local header = new("Frame", {Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, Active = true}, main)
 local mark = new("Frame", {Size = UDim2.new(0, 32, 0, 32), Position = UDim2.new(0, 12, 0, 9), BackgroundTransparency = 1}, header)
 stroke(mark, PINK, 0)
@@ -64,10 +64,10 @@ markT.Size = UDim2.new(1, 0, 1, 0)
 local title = label(header, "SKYZEN", 14, WHITE, Enum.Font.GothamBlack)
 title.Position = UDim2.new(0, 52, 0, 9)
 title.Size = UDim2.new(0, 120, 0, 18)
-local sub = label(header, "ULTRA TOOLKIT", 8, MUTED)
+local sub = label(header, "AUTO UNLOCK FIXED", 8, MUTED)
 sub.Position = UDim2.new(0, 52, 0, 27)
 sub.Size = UDim2.new(0, 120, 0, 12)
-local statusLbl = label(header, "● READY", 8, GREEN, Enum.Font.GothamBold, Enum.TextXAlignment.Right)
+local statusLbl = label(header, "● ACTIVE", 8, GREEN, Enum.Font.GothamBold, Enum.TextXAlignment.Right)
 statusLbl.Position = UDim2.new(1, -150, 0, 0)
 statusLbl.Size = UDim2.new(0, 108, 1, 0)
 
@@ -78,15 +78,51 @@ local minBtn = new("TextButton", {
 corner(minBtn, 6)
 new("Frame", {Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 0, 50), BackgroundColor3 = WHITE, BackgroundTransparency = 0.88, BorderSizePixel = 0}, main)
 
--- area halaman utama
-local area = new("Frame", {Size = UDim2.new(1, -16, 1, -62), Position = UDim2.new(0, 8, 0, 56), BackgroundTransparency = 1}, main)
+-- Tab Selector Bar
+local tabBar = new("Frame", {Size = UDim2.new(1, -16, 0, 30), Position = UDim2.new(0, 8, 0, 56), BackgroundTransparency = 1}, main)
+local tabLayout = new("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6)}, tabBar)
 
-local farmPage = new("ScrollingFrame", {
+local container = new("Frame", {Size = UDim2.new(1, -16, 1, -96), Position = UDim2.new(0, 8, 0, 90), BackgroundTransparency = 1}, main)
+
+local page1 = new("ScrollingFrame", {
     Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0,
-    ScrollBarThickness = 3, CanvasSize = UDim2.new(0, 0, 0, 0),
-    AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = true,
-}, area)
-new("UIListLayout", {Padding = UDim.new(0, 8)}, farmPage)
+    ScrollBarThickness = 3, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = true,
+}, container)
+new("UIListLayout", {Padding = UDim.new(0, 8)}, page1)
+
+local page2 = new("ScrollingFrame", {
+    Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0,
+    ScrollBarThickness = 3, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false,
+}, container)
+new("UIListLayout", {Padding = UDim.new(0, 8)}, page2)
+
+local function createTabButton(name, targetPage)
+    local btn = new("TextButton", {
+        Size = UDim2.new(0.5, -3, 1, 0), BackgroundColor3 = INPUT,
+        Text = name, TextSize = 11, Font = Enum.Font.GothamBold, TextColor3 = MUTED,
+    }, tabBar)
+    corner(btn, 6)
+    stroke(btn, WHITE, 0.88)
+
+    btn.MouseButton1Click:Connect(function()
+        page1.Visible = (targetPage == 1)
+        page2.Visible = (targetPage == 2)
+        for _, child in ipairs(tabBar:GetChildren()) do
+            if child:IsA("TextButton") then
+                child.BackgroundColor3 = INPUT
+                child.TextColor3 = MUTED
+            end
+        end
+        btn.BackgroundColor3 = PINK
+        btn.TextColor3 = WHITE
+    end)
+    return btn
+end
+
+local btn1 = createTabButton("COMBAT & CLICK", 1)
+btn1.BackgroundColor3 = PINK
+btn1.TextColor3 = WHITE
+createTabButton("PROGRESSION", 2)
 
 local function panel(page, step, titleText, tag)
     local f = new("Frame", {Size = UDim2.new(1, -6, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundColor3 = PANEL}, page)
@@ -111,7 +147,7 @@ end
 local function toggleRow(parentFrame, name, cb)
     local state = false
     local b = new("TextButton", {Size = UDim2.new(1, 0, 0, 34), BackgroundColor3 = INPUT, Text = "", AutoButtonColor = false, LayoutOrder = 1}, parentFrame)
-    corner(b,	 8)
+    corner(b, 8)
     local s = stroke(b, WHITE, 0.88)
     local t = label(b, name, 12, WHITE)
     t.Position = UDim2.new(0, 10, 0, 0)
@@ -131,7 +167,7 @@ local function toggleRow(parentFrame, name, cb)
 end
 
 ------------------------------------------------------------
--- FITUR SCRIPT
+-- LOGIKA UTAMA
 ------------------------------------------------------------
 local SETTINGS = {
     AutoClick = false,
@@ -140,85 +176,56 @@ local SETTINGS = {
     SkillR = false,
     Rebirth = false,
     BestPet = false,
+    ClaimCakra = false,
+    AutoEyes = false,
 }
 
-local remotesFolder = RS:FindFirstChild("Remotes")
-
 local function getRemote(name)
-    if remotesFolder then
-        return remotesFolder:FindFirstChild(name)
+    for _, v in ipairs(RS:GetDescendants()) do
+        if v.Name == name and (v:IsA("RemoteEvent") or v:IsA("RemoteFunction")) then
+            return v
+        end
     end
     return nil
 end
 
--- Fungsi pencarian target musuh terdekat di Workspace (jika ada folder musuh/mobs)
-local function getNearestTarget()
-    local mobsFolder = workspace:FindFirstChild("Mobs") or workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("Wave")
-    local char = lp.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return nil end
-
-    local closestTarget = nil
-    local shortestDist = math.huge
-
-    if mobsFolder then
-        for _, mob in ipairs(mobsFolder:GetDescendants()) do
-            if mob:IsA("Model") and mob:FindFirstChild("HumanoidRootPart") then
-                local dist = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
-                if dist < shortestDist then
-                    shortestDist = dist
-                    closestTarget = mob
-                end
-            end
-        end
-    end
-    return closestTarget
-end
-
-local function fireCast(skill)
+local function sendCast(actionName)
     local castRemote = getRemote("Cast")
     local char = lp.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    
     if castRemote and hrp then
-        local p = hrp.Position
-        local target = getNearestTarget()
-        local targetId = nil
-        if target and target:FindFirstChild("ID") then
-            targetId = target.ID.Value
-        end
-
         pcall(function()
-            -- Mengirimkan skill dengan koordinat dan target jika ditemukan
-            castRemote:FireServer(skill, p.X, p.Y, p.Z, targetId)
+            castRemote:FireServer(actionName, hrp.Position)
         end)
     end
 end
 
--- Panel 0: Auto Click
-local clickPanel = panel(farmPage, "01", "Auto Clicker", "FAST SPEED")
+-- UI Panels
+local clickPanel = panel(page1, "01", "Auto Clicker", "FAST SPEED")
 toggleRow(clickPanel, "Ultra Auto Click", function(v) SETTINGS.AutoClick = v end)
 
--- Panel 1: Auto Combat
-local combatPanel = panel(farmPage, "02", "Auto Combat", "REMOTE ENGINE")
+local combatPanel = panel(page1, "02", "Auto Combat", "REMOTE ENGINE")
 toggleRow(combatPanel, "Auto Attack", function(v) SETTINGS.Attack = v end)
 toggleRow(combatPanel, "Auto Skill E", function(v) SETTINGS.SkillE = v end)
 toggleRow(combatPanel, "Auto Skill R", function(v) SETTINGS.SkillR = v end)
 
--- Panel 2: Progression & Pets
-local progPanel = panel(farmPage, "03", "Progression & Pets", "ADVANCED")
+local progPanel = panel(page2, "01", "Progression & Eyes", "ADVANCED")
 toggleRow(progPanel, "Auto Rebirth", function(v) SETTINGS.Rebirth = v end)
 toggleRow(progPanel, "Auto Best Pet", function(v) SETTINGS.BestPet = v end)
+toggleRow(progPanel, "Tap 2x Cakra (Claim)", function(v) SETTINGS.ClaimCakra = v end)
+toggleRow(progPanel, "Auto Unlock Eyes", function(v) SETTINGS.AutoEyes = v end)
 
--- Looping Auto Click
+-- Loops
 task.spawn(function()
     while true do
         if SETTINGS.AutoClick then
             pcall(function()
-                local clickRemote = getRemote("Click") or getRemote("Train") or getRemote("ClickButton")
+                local clickRemote = getRemote("Click") or getRemote("Train")
                 if clickRemote then
                     clickRemote:FireServer()
                 else
-                    fireCast("attack")
+                    sendCast("attack")
                 end
             end)
             task.wait(0.01)
@@ -228,26 +235,23 @@ task.spawn(function()
     end
 end)
 
--- Looping Auto Combat (Attack)
 task.spawn(function()
     while task.wait(0.25) do
         if SETTINGS.Attack then 
-            fireCast("attack") 
+            sendCast("attack")
         end
     end
 end)
 
--- Looping Auto Skill E & R (Dibuat terpisah agar interval skill lebih pas)
 task.spawn(function()
     while task.wait(0.5) do
-        if SETTINGS.SkillE then fireCast("E") end
-        if SETTINGS.SkillR then fireCast("R") end
+        if SETTINGS.SkillE then sendCast("E") end
+        if SETTINGS.SkillR then sendCast("R") end
     end
 end)
 
--- Looping Auto Rebirth & Best Pet
 task.spawn(function()
-    while task.wait(1) do
+    while task.wait(0.5) do
         if SETTINGS.Rebirth then
             pcall(function()
                 local r = getRemote("Rebirth")
@@ -266,11 +270,30 @@ task.spawn(function()
                 end
             end)
         end
+
+        if SETTINGS.ClaimCakra then
+            pcall(function()
+                local castRemote = getRemote("Cast")
+                if castRemote then
+                    castRemote:FireServer("claim", 24)
+                end
+            end)
+        end
+
+        -- Auto Unlock Eyes (Memanggil remote UnlockEye secara berkala tanpa argumen angka)
+        if SETTINGS.AutoEyes then
+            pcall(function()
+                local unlockEyeRemote = getRemote("UnlockEye")
+                if unlockEyeRemote then
+                    unlockEyeRemote:FireServer()
+                end
+            end)
+        end
     end
 end)
 
 ------------------------------------------------------------
--- minimize + drag
+-- Minimize & Drag Utility
 ------------------------------------------------------------
 local icon = new("TextButton", {
     Size = UDim2.new(0, 46, 0, 46), Position = UDim2.new(0, 12, 0.4, 0), BackgroundColor3 = BG,
