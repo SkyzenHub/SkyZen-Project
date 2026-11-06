@@ -1,4 +1,5 @@
--- SKYZEN TOOLKIT: AUTO FARM (FIXED LOGIC)
+Berikut adalah script lengkap dengan tambahan fitur Auto Click (klik sangat cepat) yang disesuaikan dengan struktur game dan antarmuka SKYZEN:
+-- SKYZEN TOOLKIT: AUTO COMBAT, REBIRTH, BEST PET, & ULTRA AUTO CLICK
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -44,7 +45,7 @@ end)
 local gui = new("ScreenGui", {Name = "SkyzenToolkit", ResetOnSpawn = false, DisplayOrder = 999}, parent)
 
 local main = new("Frame", {
-    Size = UDim2.new(0, 330, 0, 380), Position = UDim2.new(0.5, -165, 0.5, -190),
+    Size = UDim2.new(0, 330, 0, 420), Position = UDim2.new(0.5, -165, 0.5, -210),
     BackgroundColor3 = BG, Active = true,
 }, gui)
 corner(main, 13)
@@ -64,7 +65,7 @@ markT.Size = UDim2.new(1, 0, 1, 0)
 local title = label(header, "SKYZEN", 14, WHITE, Enum.Font.GothamBlack)
 title.Position = UDim2.new(0, 52, 0, 9)
 title.Size = UDim2.new(0, 120, 0, 18)
-local sub = label(header, "ADVANCED TOOLKIT", 8, MUTED)
+local sub = label(header, "ULTRA TOOLKIT", 8, MUTED)
 sub.Position = UDim2.new(0, 52, 0, 27)
 sub.Size = UDim2.new(0, 120, 0, 12)
 local statusLbl = label(header, "● READY", 8, GREEN, Enum.Font.GothamBold, Enum.TextXAlignment.Right)
@@ -131,9 +132,10 @@ local function toggleRow(parentFrame, name, cb)
 end
 
 ------------------------------------------------------------
--- LOGIKA UTAMA & REMOTES
+-- FITUR SCRIPT (AUTO CLICK, COMBAT, REBIRTH, BEST PET)
 ------------------------------------------------------------
 local SETTINGS = {
+    AutoClick = false,
     Attack = false,
     SkillE = false,
     SkillR = false,
@@ -141,49 +143,64 @@ local SETTINGS = {
     BestPet = false,
 }
 
--- Mengambil path remotes secara aman sesuai struktur log game
-local function getCastRemote()
-    local folder = RS:FindFirstChild("Remotes")
-    if folder then
-        return folder:FindFirstChild("Cast")
+local remotesFolder = RS:FindFirstChild("Remotes")
+
+local function getRemote(name)
+    if remotesFolder then
+        return remotesFolder:FindFirstChild(name)
     end
     return nil
 end
 
-local function getOtherRemote(name)
-    local folder = RS:FindFirstChild("Remotes")
-    if folder then
-        return folder:FindFirstChild(name)
-    end
-    return nil
-end
-
--- Logika pengiriman remote Cast yang sesuai dengan parameter game (skill, x, y, z, target)
 local function fireCast(skill)
-    local castRemote = getCastRemote()
+    local castRemote = getRemote("Cast")
     local c = lp.Character
     local hrp = c and c:FindFirstChild("HumanoidRootPart")
     if castRemote and hrp then
         local p = hrp.Position
-        -- Sesuai dengan log: FireServer ("attack", x, y, z, nil)
         pcall(function()
             castRemote:FireServer(skill, p.X, p.Y, p.Z, nil)
         end)
     end
 end
 
+-- Panel 0: Auto Click Super Cepat
+local clickPanel = panel(farmPage, "01", "Auto Clicker", "FAST SPEED")
+toggleRow(clickPanel, "Ultra Auto Click", function(v) SETTINGS.AutoClick = v end)
+
 -- Panel 1: Auto Combat
-local combatPanel = panel(farmPage, "01", "Auto Combat", "REMOTE ENGINE")
+local combatPanel = panel(farmPage, "02", "Auto Combat", "REMOTE ENGINE")
 toggleRow(combatPanel, "Auto Attack", function(v) SETTINGS.Attack = v end)
 toggleRow(combatPanel, "Auto Skill E", function(v) SETTINGS.SkillE = v end)
 toggleRow(combatPanel, "Auto Skill R", function(v) SETTINGS.SkillR = v end)
 
 -- Panel 2: Auto Progression (Rebirth & Best Pet)
-local progPanel = panel(farmPage, "02", "Progression & Pets", "ADVANCED")
+local progPanel = panel(farmPage, "03", "Progression & Pets", "ADVANCED")
 toggleRow(progPanel, "Auto Rebirth", function(v) SETTINGS.Rebirth = v end)
-toggleRow(progPanel, "Auto Best Pet (Equip)", function(v) SETTINGS.BestPet = v end)
+toggleRow(progPanel, "Auto Best Pet", function(v) SETTINGS.BestPet = v end)
 
--- Looping Sistem Otomatis
+-- Looping Ultra Auto Click (Berjalan sangat cepat menggunakan task.defer / loop kilat)
+task.spawn(function()
+    while true do
+        if SETTINGS.AutoClick then
+            pcall(function()
+                -- Mencari remote klik / latihan klik jika ada, atau menembak klik klik berkecepatan tinggi
+                local clickRemote = getRemote("Click") or getRemote("Train") or getRemote("ClickButton")
+                if clickRemote then
+                    clickRemote:FireServer()
+                else
+                    -- Alternatif jika game memakai sistem klik mentah / cast
+                    fireCast("attack")
+                end
+            end)
+            task.wait(0.01) -- Interval super cepat (bisa diubah agar lebih cepat)
+        else
+            task.wait(0.2)
+        end
+    end
+end)
+
+-- Looping Auto Combat
 task.spawn(function()
     while task.wait(0.2) do
         if SETTINGS.Attack then 
@@ -192,15 +209,15 @@ task.spawn(function()
     end
 end)
 
+-- Looping Auto Rebirth & Best Pet
 task.spawn(function()
     while task.wait(1) do
         if SETTINGS.SkillE then fireCast("E") end
         if SETTINGS.SkillR then fireCast("R") end
         
-        -- Auto Rebirth
         if SETTINGS.Rebirth then
             pcall(function()
-                local r = getOtherRemote("Rebirth") or getOtherRemote("RequestRebirth")
+                local r = getRemote("Rebirth")
                 if r then
                     if r:IsA("RemoteEvent") then r:FireServer()
                     elseif r:IsA("RemoteFunction") then r:InvokeServer() end
@@ -208,13 +225,11 @@ task.spawn(function()
             end)
         end
 
-        -- Auto Best Pet
         if SETTINGS.BestPet then
             pcall(function()
-                local r = getOtherRemote("BestPets") or getOtherRemote("EquipBest") or getOtherRemote("PetEquipBest")
-                if r then
-                    if r:IsA("RemoteEvent") then r:FireServer()
-                    elseif r:IsA("RemoteFunction") then r:InvokeServer() end
+                local petAction = getRemote("PetAction")
+                if petAction then
+                    petAction:InvokeServer("equipBest", nil)
                 end
             end)
         end
@@ -253,3 +268,4 @@ local function drag(handle, obj)
 end
 drag(header, main)
 drag(icon, icon)
+
