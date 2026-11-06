@@ -1,5 +1,5 @@
 -- SKYZEN TOOLKIT: UI bergaya web SKYZEN (hitam + pink, panel kotak, halaman/tab)
--- Halaman 1: AUTO FARM  |  Halaman 2: LOG (pencatat aman)
+-- Halaman: LOG (pencatat aman)
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -95,7 +95,7 @@ local function selectTab(name)
 end
 local function addTab(name)
     local b = new("TextButton", {
-        Size = UDim2.new(0.5, -3, 1, 0), BackgroundColor3 = INPUT, Text = name,
+        Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = INPUT, Text = name,
         TextSize = 11, Font = Enum.Font.GothamBold, TextColor3 = MUTED, AutoButtonColor = false,
     }, tabBar)
     corner(b, 7)
@@ -158,98 +158,10 @@ local function toggleRow(parentFrame, name, cb)
 end
 
 ------------------------------------------------------------
--- HALAMAN 1: AUTO FARM
+-- HALAMAN: LOG
 ------------------------------------------------------------
-addTab("AUTO FARM")
 addTab("LOG")
 
-local farmPage = scrollPage("AUTO FARM")
-local FARM = {Train = false, Attack = false, E = false, R = false}
-local FarmState = {}
-local FarmRemotes = nil
-
-local function getFarmRemotes()
-    if FarmRemotes then return FarmRemotes end
-    local folder = RS:FindFirstChild("Remotes")
-    if not folder then return nil end
-    local cast = folder:FindFirstChild("Cast")
-    local train = folder:FindFirstChild("Train")
-    local ps = folder:FindFirstChild("PrivateState")
-    if cast and train and ps then
-        FarmRemotes = {Cast = cast, Train = train}
-        ps.OnClientEvent:Connect(function(data)
-            if type(data) == "table" then
-                for k, v in pairs(data) do FarmState[k] = v end
-            end
-        end)
-    end
-    return FarmRemotes
-end
-
-local function farmCast(skill)
-    local r = getFarmRemotes()
-    local c = lp.Character
-    local hrp = c and c:FindFirstChild("HumanoidRootPart")
-    if r and hrp then
-        local p = hrp.Position
-        r.Cast:FireServer(skill, p.X, p.Y, p.Z)
-    end
-end
-
-local statPanel = panel(farmPage, "01", "Player status", "LIVE DATA")
-local statTxt = label(statPanel, "Menunggu data game...", 12, Color3.fromRGB(210, 210, 220), Enum.Font.Gotham)
-statTxt.Size = UDim2.new(1, 0, 0, 48)
-statTxt.TextYAlignment = Enum.TextYAlignment.Top
-statTxt.LayoutOrder = 1
-
-local farmPanel = panel(farmPage, "02", "Auto farm", "REMOTE ENGINE")
-toggleRow(farmPanel, "Auto Train", function(v) FARM.Train = v end)
-toggleRow(farmPanel, "Auto Attack", function(v) FARM.Attack = v end)
-toggleRow(farmPanel, "Auto Skill E", function(v) FARM.E = v end)
-toggleRow(farmPanel, "Auto Skill R", function(v) FARM.R = v end)
-
-task.spawn(function()
-    while task.wait(0.15) do
-        if FARM.Train then
-            local r = getFarmRemotes()
-            if r then pcall(function() r.Train:FireServer() end) end
-        end
-    end
-end)
-task.spawn(function()
-    while task.wait(0.25) do
-        if FARM.Attack then pcall(farmCast, "attack") end
-    end
-end)
-task.spawn(function()
-    while task.wait(1) do
-        if FARM.E then pcall(farmCast, "E") end
-    end
-end)
-task.spawn(function()
-    while task.wait(1) do
-        if FARM.R then pcall(farmCast, "R") end
-    end
-end)
-task.spawn(function()
-    while task.wait(0.5) do
-        if getFarmRemotes() then
-            statTxt.Text = string.format("Level   : %s\nXP        : %s / %s\nChakra  : %s",
-                tostring(FarmState.Level or "?"), tostring(FarmState.XP or "?"),
-                tostring(FarmState.XPNext or "?"), tostring(FarmState.Chakra or "?"))
-            statusLbl.Text = "● SYSTEM READY"
-            statusLbl.TextColor3 = GREEN
-        else
-            statTxt.Text = "Remotes game ini tidak ditemukan."
-            statusLbl.Text = "● NO REMOTES"
-            statusLbl.TextColor3 = PINK
-        end
-    end
-end)
-
-------------------------------------------------------------
--- HALAMAN 2: LOG
-------------------------------------------------------------
 local logPage = new("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = PANEL, Visible = false}, area)
 corner(logPage, 10)
 stroke(logPage, WHITE, 0.88)
@@ -446,4 +358,4 @@ end
 drag(header, main)
 drag(icon, icon)
 
-selectTab("AUTO FARM")
+selectTab("LOG")
