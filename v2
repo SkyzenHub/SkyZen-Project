@@ -1,0 +1,449 @@
+-- SKYZEN TOOLKIT: UI bergaya web SKYZEN (hitam + pink, panel kotak, halaman/tab)
+-- Halaman 1: AUTO FARM  |  Halaman 2: LOG (pencatat aman)
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("ReplicatedStorage")
+local lp = Players.LocalPlayer
+
+local PINK = Color3.fromRGB(255, 49, 93)
+local BG = Color3.fromRGB(9, 7, 11)
+local PANEL = Color3.fromRGB(20, 16, 24)
+local INPUT = Color3.fromRGB(8, 7, 10)
+local MUTED = Color3.fromRGB(170, 163, 173)
+local GREEN = Color3.fromRGB(85, 223, 155)
+local WHITE = Color3.new(1, 1, 1)
+local OFFTRACK = Color3.fromRGB(50, 45, 55)
+
+-- ===== helper =====
+local function new(class, props, parent)
+    local o = Instance.new(class)
+    for k, v in pairs(props) do o[k] = v end
+    if parent then o.Parent = parent end
+    return o
+end
+local function corner(o, r) new("UICorner", {CornerRadius = UDim.new(0, r)}, o) end
+local function stroke(o, col, tr) return new("UIStroke", {Color = col, Transparency = tr or 0, Thickness = 1}, o) end
+local function label(parent, text, size, color, font, x)
+    return new("TextLabel", {
+        BackgroundTransparency = 1, Text = text, TextSize = size, TextColor3 = color,
+        Font = font or Enum.Font.GothamBold, TextXAlignment = x or Enum.TextXAlignment.Left,
+    }, parent)
+end
+
+-- ===== GUI utama =====
+local parent = lp:WaitForChild("PlayerGui")
+if gethui then
+    local ok, h = pcall(gethui)
+    if ok and h then parent = h end
+end
+pcall(function()
+    local old = parent:FindFirstChild("SkyzenToolkit")
+    if old then old:Destroy() end
+end)
+
+local gui = new("ScreenGui", {Name = "SkyzenToolkit", ResetOnSpawn = false, DisplayOrder = 999}, parent)
+
+local main = new("Frame", {
+    Size = UDim2.new(0, 330, 0, 340), Position = UDim2.new(0.5, -165, 0.5, -170),
+    BackgroundColor3 = BG, Active = true,
+}, gui)
+corner(main, 13)
+stroke(main, PINK, 0.55)
+new("UIGradient", {
+    Rotation = 90,
+    Color = ColorSequence.new(Color3.fromRGB(22, 16, 26), Color3.fromRGB(9, 7, 11)),
+}, main)
+
+-- header
+local header = new("Frame", {Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, Active = true}, main)
+local mark = new("Frame", {Size = UDim2.new(0, 32, 0, 32), Position = UDim2.new(0, 12, 0, 9), BackgroundTransparency = 1}, header)
+stroke(mark, PINK, 0)
+corner(mark, 4)
+local markT = label(mark, "S", 20, PINK, Enum.Font.GothamBlack, Enum.TextXAlignment.Center)
+markT.Size = UDim2.new(1, 0, 1, 0)
+local title = label(header, "SKYZEN", 14, WHITE, Enum.Font.GothamBlack)
+title.Position = UDim2.new(0, 52, 0, 9)
+title.Size = UDim2.new(0, 120, 0, 18)
+local sub = label(header, "ROBLOX TOOLKIT", 8, MUTED)
+sub.Position = UDim2.new(0, 52, 0, 27)
+sub.Size = UDim2.new(0, 120, 0, 12)
+local statusLbl = label(header, "● SYSTEM READY", 8, GREEN, Enum.Font.GothamBold, Enum.TextXAlignment.Right)
+statusLbl.Position = UDim2.new(1, -150, 0, 0)
+statusLbl.Size = UDim2.new(0, 108, 1, 0)
+local minBtn = new("TextButton", {
+    Size = UDim2.new(0, 26, 0, 26), Position = UDim2.new(1, -36, 0, 12),
+    BackgroundColor3 = INPUT, Text = "–", TextSize = 16, Font = Enum.Font.GothamBold, TextColor3 = WHITE,
+}, header)
+corner(minBtn, 6)
+new("Frame", {Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 0, 50), BackgroundColor3 = WHITE, BackgroundTransparency = 0.88, BorderSizePixel = 0}, main)
+
+-- tab bar
+local tabBar = new("Frame", {Size = UDim2.new(1, -16, 0, 30), Position = UDim2.new(0, 8, 0, 58), BackgroundTransparency = 1}, main)
+new("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6)}, tabBar)
+
+local area = new("Frame", {Size = UDim2.new(1, -16, 1, -98), Position = UDim2.new(0, 8, 0, 92), BackgroundTransparency = 1}, main)
+
+local pages, tabBtns = {}, {}
+local function selectTab(name)
+    for n, p in pairs(pages) do p.Visible = (n == name) end
+    for n, b in pairs(tabBtns) do
+        local on = (n == name)
+        b.BackgroundColor3 = on and PINK or INPUT
+        b.TextColor3 = on and WHITE or MUTED
+    end
+end
+local function addTab(name)
+    local b = new("TextButton", {
+        Size = UDim2.new(0.5, -3, 1, 0), BackgroundColor3 = INPUT, Text = name,
+        TextSize = 11, Font = Enum.Font.GothamBold, TextColor3 = MUTED, AutoButtonColor = false,
+    }, tabBar)
+    corner(b, 7)
+    tabBtns[name] = b
+    b.MouseButton1Click:Connect(function() selectTab(name) end)
+end
+
+-- ===== komponen panel =====
+local function scrollPage(name)
+    local p = new("ScrollingFrame", {
+        Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0,
+        ScrollBarThickness = 3, CanvasSize = UDim2.new(0, 0, 0, 0),
+        AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false,
+    }, area)
+    new("UIListLayout", {Padding = UDim.new(0, 8)}, p)
+    pages[name] = p
+    return p
+end
+
+local function panel(page, step, titleText, tag)
+    local f = new("Frame", {Size = UDim2.new(1, -6, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundColor3 = PANEL}, page)
+    corner(f, 10)
+    stroke(f, WHITE, 0.88)
+    new("UIPadding", {PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10), PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10)}, f)
+    new("UIListLayout", {Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder}, f)
+    local head = new("Frame", {Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, LayoutOrder = 0}, f)
+    local st = new("Frame", {Size = UDim2.new(0, 26, 0, 20), Position = UDim2.new(0, 0, 0, 2), BackgroundTransparency = 1}, head)
+    stroke(st, PINK, 0.4)
+    local stT = label(st, step, 11, PINK, Enum.Font.GothamBold, Enum.TextXAlignment.Center)
+    stT.Size = UDim2.new(1, 0, 1, 0)
+    local tt = label(head, titleText, 14, WHITE, Enum.Font.GothamBold)
+    tt.Position = UDim2.new(0, 34, 0, 0)
+    tt.Size = UDim2.new(1, -100, 1, 0)
+    local tg = label(head, tag, 7, MUTED, Enum.Font.GothamBold, Enum.TextXAlignment.Right)
+    tg.Position = UDim2.new(1, -90, 0, 0)
+    tg.Size = UDim2.new(0, 90, 1, 0)
+    return f
+end
+
+local function toggleRow(parentFrame, name, cb)
+    local state = false
+    local b = new("TextButton", {Size = UDim2.new(1, 0, 0, 34), BackgroundColor3 = INPUT, Text = "", AutoButtonColor = false, LayoutOrder = 1}, parentFrame)
+    corner(b, 8)
+    local s = stroke(b, WHITE, 0.88)
+    local t = label(b, name, 12, WHITE)
+    t.Position = UDim2.new(0, 10, 0, 0)
+    t.Size = UDim2.new(1, -60, 1, 0)
+    local track = new("Frame", {Size = UDim2.new(0, 34, 0, 18), Position = UDim2.new(1, -44, 0.5, -9), BackgroundColor3 = OFFTRACK}, b)
+    corner(track, 9)
+    local knob = new("Frame", {Size = UDim2.new(0, 14, 0, 14), Position = UDim2.new(0, 2, 0.5, -7), BackgroundColor3 = WHITE}, track)
+    corner(knob, 7)
+    b.MouseButton1Click:Connect(function()
+        state = not state
+        track.BackgroundColor3 = state and PINK or OFFTRACK
+        knob.Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+        s.Color = state and PINK or WHITE
+        s.Transparency = state and 0.3 or 0.88
+        pcall(cb, state)
+    end)
+end
+
+------------------------------------------------------------
+-- HALAMAN 1: AUTO FARM
+------------------------------------------------------------
+addTab("AUTO FARM")
+addTab("LOG")
+
+local farmPage = scrollPage("AUTO FARM")
+local FARM = {Train = false, Attack = false, E = false, R = false}
+local FarmState = {}
+local FarmRemotes = nil
+
+local function getFarmRemotes()
+    if FarmRemotes then return FarmRemotes end
+    local folder = RS:FindFirstChild("Remotes")
+    if not folder then return nil end
+    local cast = folder:FindFirstChild("Cast")
+    local train = folder:FindFirstChild("Train")
+    local ps = folder:FindFirstChild("PrivateState")
+    if cast and train and ps then
+        FarmRemotes = {Cast = cast, Train = train}
+        ps.OnClientEvent:Connect(function(data)
+            if type(data) == "table" then
+                for k, v in pairs(data) do FarmState[k] = v end
+            end
+        end)
+    end
+    return FarmRemotes
+end
+
+local function farmCast(skill)
+    local r = getFarmRemotes()
+    local c = lp.Character
+    local hrp = c and c:FindFirstChild("HumanoidRootPart")
+    if r and hrp then
+        local p = hrp.Position
+        r.Cast:FireServer(skill, p.X, p.Y, p.Z)
+    end
+end
+
+local statPanel = panel(farmPage, "01", "Player status", "LIVE DATA")
+local statTxt = label(statPanel, "Menunggu data game...", 12, Color3.fromRGB(210, 210, 220), Enum.Font.Gotham)
+statTxt.Size = UDim2.new(1, 0, 0, 48)
+statTxt.TextYAlignment = Enum.TextYAlignment.Top
+statTxt.LayoutOrder = 1
+
+local farmPanel = panel(farmPage, "02", "Auto farm", "REMOTE ENGINE")
+toggleRow(farmPanel, "Auto Train", function(v) FARM.Train = v end)
+toggleRow(farmPanel, "Auto Attack", function(v) FARM.Attack = v end)
+toggleRow(farmPanel, "Auto Skill E", function(v) FARM.E = v end)
+toggleRow(farmPanel, "Auto Skill R", function(v) FARM.R = v end)
+
+task.spawn(function()
+    while task.wait(0.15) do
+        if FARM.Train then
+            local r = getFarmRemotes()
+            if r then pcall(function() r.Train:FireServer() end) end
+        end
+    end
+end)
+task.spawn(function()
+    while task.wait(0.25) do
+        if FARM.Attack then pcall(farmCast, "attack") end
+    end
+end)
+task.spawn(function()
+    while task.wait(1) do
+        if FARM.E then pcall(farmCast, "E") end
+    end
+end)
+task.spawn(function()
+    while task.wait(1) do
+        if FARM.R then pcall(farmCast, "R") end
+    end
+end)
+task.spawn(function()
+    while task.wait(0.5) do
+        if getFarmRemotes() then
+            statTxt.Text = string.format("Level   : %s\nXP        : %s / %s\nChakra  : %s",
+                tostring(FarmState.Level or "?"), tostring(FarmState.XP or "?"),
+                tostring(FarmState.XPNext or "?"), tostring(FarmState.Chakra or "?"))
+            statusLbl.Text = "● SYSTEM READY"
+            statusLbl.TextColor3 = GREEN
+        else
+            statTxt.Text = "Remotes game ini tidak ditemukan."
+            statusLbl.Text = "● NO REMOTES"
+            statusLbl.TextColor3 = PINK
+        end
+    end
+end)
+
+------------------------------------------------------------
+-- HALAMAN 2: LOG
+------------------------------------------------------------
+local logPage = new("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = PANEL, Visible = false}, area)
+corner(logPage, 10)
+stroke(logPage, WHITE, 0.88)
+pages["LOG"] = logPage
+
+local btnRow = new("Frame", {Size = UDim2.new(1, -16, 0, 28), Position = UDim2.new(0, 8, 0, 8), BackgroundTransparency = 1}, logPage)
+new("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6)}, btnRow)
+local function smallBtn(text, w)
+    local b = new("TextButton", {
+        Size = UDim2.new(0, w, 1, 0), BackgroundColor3 = INPUT, Text = text, TextSize = 10,
+        Font = Enum.Font.GothamBold, TextColor3 = WHITE, AutoButtonColor = false,
+    }, btnRow)
+    corner(b, 7)
+    stroke(b, PINK, 0.5)
+    return b
+end
+local clearB = smallBtn("HAPUS", 54)
+local copyB = smallBtn("SALIN", 54)
+local pauseB = smallBtn("JEDA", 54)
+local filterB = smallBtn("SEMBUNYI FX", 82)
+
+local logScroll = new("ScrollingFrame", {
+    Size = UDim2.new(1, -16, 1, -52), Position = UDim2.new(0, 8, 0, 44), BackgroundColor3 = INPUT,
+    BorderSizePixel = 0, ScrollBarThickness = 3, CanvasSize = UDim2.new(0, 0, 0, 0),
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+}, logPage)
+corner(logScroll, 8)
+new("UIListLayout", {}, logScroll)
+new("UIPadding", {PaddingLeft = UDim.new(0, 6), PaddingTop = UDim.new(0, 4)}, logScroll)
+
+local MAX_LINES = 200
+local queue, lines, labels = {}, {}, {}
+local paused = false
+local hideNoisy = true
+local NOISY = {Fx = true, Train = true}
+
+local function ser(v, d)
+    d = d or 0
+    local t = typeof(v)
+    if t == "string" then return '"' .. v .. '"'
+    elseif t == "Instance" then return v:GetFullName()
+    elseif t == "table" then
+        if d > 2 then return "{...}" end
+        local p = {}
+        for k, x in pairs(v) do
+            p[#p + 1] = "[" .. tostring(k) .. "]=" .. ser(x, d + 1)
+        end
+        return "{" .. table.concat(p, ", ") .. "}"
+    end
+    return tostring(v)
+end
+local function packArgs(args)
+    local parts = {}
+    for i = 1, args.n do
+        local ok, r = pcall(ser, args[i])
+        parts[i] = ok and r or "?"
+    end
+    return table.concat(parts, ", ")
+end
+local function push(tag, text, remoteName)
+    if paused then return end
+    if hideNoisy and remoteName and NOISY[remoteName] then return end
+    queue[#queue + 1] = string.format("[%s] %s %s", os.date("%H:%M:%S"), tag, text)
+end
+
+task.spawn(function()
+    while task.wait(0.4) do
+        if #queue > 0 and pages["LOG"].Visible then
+            local batch = queue
+            queue = {}
+            for _, line in ipairs(batch) do
+                lines[#lines + 1] = line
+                local l = new("TextLabel", {
+                    Size = UDim2.new(1, -10, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
+                    BackgroundTransparency = 1, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left,
+                    TextColor3 = Color3.fromRGB(225, 220, 228), TextSize = 11, Font = Enum.Font.Code, Text = line,
+                }, logScroll)
+                labels[#labels + 1] = l
+            end
+            while #lines > MAX_LINES do
+                table.remove(lines, 1)
+                table.remove(labels, 1):Destroy()
+            end
+            logScroll.CanvasPosition = Vector2.new(0, 99999)
+        elseif #queue > 400 then
+            queue = {}
+        end
+    end
+end)
+
+clearB.MouseButton1Click:Connect(function()
+    lines, queue = {}, {}
+    for _, l in ipairs(labels) do l:Destroy() end
+    labels = {}
+end)
+copyB.MouseButton1Click:Connect(function()
+    if setclipboard then setclipboard(table.concat(lines, "\n")) end
+end)
+pauseB.MouseButton1Click:Connect(function()
+    paused = not paused
+    pauseB.Text = paused and "LANJUT" or "JEDA"
+end)
+filterB.MouseButton1Click:Connect(function()
+    hideNoisy = not hideNoisy
+    filterB.Text = hideNoisy and "SEMBUNYI FX" or "TAMPIL SEMUA"
+end)
+
+-- tombol UI game yang ditekan
+local hooked = {}
+local function hookButton(b)
+    if hooked[b] or b:IsDescendantOf(gui) then return end
+    hooked[b] = true
+    b.Activated:Connect(function() push("TOMBOL", b:GetFullName()) end)
+end
+local function scanUI(root)
+    for _, o in ipairs(root:GetDescendants()) do
+        if o:IsA("TextButton") or o:IsA("ImageButton") then hookButton(o) end
+    end
+    root.DescendantAdded:Connect(function(o)
+        if o:IsA("TextButton") or o:IsA("ImageButton") then hookButton(o) end
+    end)
+end
+pcall(scanUI, lp:WaitForChild("PlayerGui"))
+
+-- remote yang dikirim ke server (hook aman)
+if hookmetamethod and newcclosure and getnamecallmethod then
+    local setnm = setnamecallmethod
+    local old
+    old = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+        local m = getnamecallmethod()
+        if (m == "FireServer" or m == "InvokeServer") and not (checkcaller and checkcaller()) then
+            local args = table.pack(...)
+            local obj = self
+            task.defer(function()
+                pcall(function()
+                    if typeof(obj) == "Instance" then
+                        push("KIRIM", obj:GetFullName() .. " " .. m .. " (" .. packArgs(args) .. ")", obj.Name)
+                    end
+                end)
+            end)
+        end
+        if setnm then setnm(m) end
+        return old(self, ...)
+    end))
+else
+    push("INFO", "Executor tidak mendukung hookmetamethod: log KIRIM tidak aktif.")
+end
+
+-- remote yang diterima dari server
+local function hookRemote(r)
+    if r:IsA("RemoteEvent") then
+        r.OnClientEvent:Connect(function(...)
+            local args = table.pack(...)
+            pcall(function()
+                push("TERIMA", r:GetFullName() .. " (" .. packArgs(args) .. ")", r.Name)
+            end)
+        end)
+    end
+end
+for _, o in ipairs(game:GetDescendants()) do pcall(hookRemote, o) end
+game.DescendantAdded:Connect(function(o) pcall(hookRemote, o) end)
+push("INFO", "Pencatat aktif. Silakan main seperti biasa.")
+
+------------------------------------------------------------
+-- minimize + drag
+------------------------------------------------------------
+local icon = new("TextButton", {
+    Size = UDim2.new(0, 46, 0, 46), Position = UDim2.new(0, 12, 0.4, 0), BackgroundColor3 = BG,
+    Text = "S", TextSize = 24, Font = Enum.Font.GothamBlack, TextColor3 = PINK, Visible = false,
+}, gui)
+corner(icon, 8)
+stroke(icon, PINK, 0)
+
+minBtn.MouseButton1Click:Connect(function() main.Visible = false; icon.Visible = true end)
+icon.MouseButton1Click:Connect(function() main.Visible = true; icon.Visible = false end)
+
+local function drag(handle, obj)
+    local dragging, start, sp
+    handle.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            dragging, start, sp = true, i.Position, obj.Position
+            i.Changed:Connect(function()
+                if i.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    UIS.InputChanged:Connect(function(i)
+        if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            local d = i.Position - start
+            obj.Position = UDim2.new(sp.X.Scale, sp.X.Offset + d.X, sp.Y.Scale, sp.Y.Offset + d.Y)
+        end
+    end)
+end
+drag(header, main)
+drag(icon, icon)
+
+selectTab("AUTO FARM")
