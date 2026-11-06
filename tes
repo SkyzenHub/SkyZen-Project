@@ -1,0 +1,100 @@
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local lp = Players.LocalPlayer
+
+local Remotes = RS:WaitForChild("Remotes")
+local Cast = Remotes:WaitForChild("Cast")
+local Train = Remotes:WaitForChild("Train")
+local PState = Remotes:WaitForChild("PrivateState")
+
+local on = {Train = false, Attack = false, E = false, R = false}
+local state = {}
+
+-- posisi karakter (dipakai sebagai arah bidikan)
+local function pos()
+    local c = lp.Character
+    local hrp = c and c:FindFirstChild("HumanoidRootPart")
+    return hrp and hrp.Position
+end
+
+local function cast(skill)
+    local p = pos()
+    if p then Cast:FireServer(skill, p.X, p.Y, p.Z) end
+end
+
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui")
+gui.Name = "AutoPanel"
+gui.ResetOnSpawn = false
+if not pcall(function() gui.Parent = gethui() end) then
+    gui.Parent = lp:WaitForChild("PlayerGui")
+end
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 190, 0, 230)
+frame.Position = UDim2.new(0, 10, 0.25, 0)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.Active = true
+frame.Draggable = true
+local lay = Instance.new("UIListLayout", frame)
+lay.Padding = UDim.new(0, 4)
+
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1, 0, 0, 50)
+status.BackgroundTransparency = 1
+status.TextColor3 = Color3.new(1, 1, 1)
+status.TextSize = 13
+status.Text = "Menunggu data..."
+
+local function refresh()
+    status.Text = string.format("Level: %s\nXP: %s/%s\nChakra: %s",
+        tostring(state.Level or "?"), tostring(state.XP or "?"),
+        tostring(state.XPNext or "?"), tostring(state.Chakra or "?"))
+end
+
+local function makeToggle(key, label)
+    local b = Instance.new("TextButton", frame)
+    b.Size = UDim2.new(1, -8, 0, 36)
+    b.BackgroundColor3 = Color3.fromRGB(60, 20, 20)
+    b.TextColor3 = Color3.new(1, 1, 1)
+    b.Text = label .. ": MATI"
+    b.MouseButton1Click:Connect(function()
+        on[key] = not on[key]
+        b.Text = label .. (on[key] and ": HIDUP" or ": MATI")
+        b.BackgroundColor3 = on[key] and Color3.fromRGB(20, 90, 30) or Color3.fromRGB(60, 20, 20)
+    end)
+end
+makeToggle("Train", "Auto Train")
+makeToggle("Attack", "Auto Attack")
+makeToggle("E", "Auto E")
+makeToggle("R", "Auto R")
+
+-- ===== Status dari server =====
+PState.OnClientEvent:Connect(function(data)
+    if type(data) == "table" then
+        for k, v in pairs(data) do state[k] = v end
+        refresh()
+    end
+end)
+
+-- ===== Loop otomatis =====
+task.spawn(function()
+    while task.wait(0.15) do
+        if on.Train then Train:FireServer() end
+    end
+end)
+task.spawn(function()
+    while task.wait(0.25) do
+        if on.Attack then cast("attack") end
+    end
+end)
+task.spawn(function()
+    while task.wait(1) do
+        if on.E then cast("E") end
+    end
+end)
+task.spawn(function()
+    while task.wait(1) do
+        if on.R then cast("R") end
+    end
+end)
