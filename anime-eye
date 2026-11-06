@@ -1,4 +1,4 @@
--- SKYZEN TOOLKIT: UI bergaya web SKYZEN (hitam + pink, panel kotak, Auto Farm)
+-- SKYZEN TOOLKIT: AUTO FARM, AUTO REBIRTH, AUTO BEST PET
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -44,7 +44,7 @@ end)
 local gui = new("ScreenGui", {Name = "SkyzenToolkit", ResetOnSpawn = false, DisplayOrder = 999}, parent)
 
 local main = new("Frame", {
-    Size = UDim2.new(0, 330, 0, 260), Position = UDim2.new(0.5, -165, 0.5, -130),
+    Size = UDim2.new(0, 330, 0, 380), Position = UDim2.new(0.5, -165, 0.5, -190),
     BackgroundColor3 = BG, Active = true,
 }, gui)
 corner(main, 13)
@@ -64,7 +64,7 @@ markT.Size = UDim2.new(1, 0, 1, 0)
 local title = label(header, "SKYZEN", 14, WHITE, Enum.Font.GothamBlack)
 title.Position = UDim2.new(0, 52, 0, 9)
 title.Size = UDim2.new(0, 120, 0, 18)
-local sub = label(header, "AUTO FARM SCRIPT", 8, MUTED)
+local sub = label(header, "ALL-IN-ONE TOOLKIT", 8, MUTED)
 sub.Position = UDim2.new(0, 52, 0, 27)
 sub.Size = UDim2.new(0, 120, 0, 12)
 local statusLbl = label(header, "● READY", 8, GREEN, Enum.Font.GothamBold, Enum.TextXAlignment.Right)
@@ -78,7 +78,7 @@ local minBtn = new("TextButton", {
 corner(minBtn, 6)
 new("Frame", {Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 0, 50), BackgroundColor3 = WHITE, BackgroundTransparency = 0.88, BorderSizePixel = 0}, main)
 
--- area halaman farm utama (tanpa tab bar)
+-- area halaman utama
 local area = new("Frame", {Size = UDim2.new(1, -16, 1, -62), Position = UDim2.new(0, 8, 0, 56), BackgroundTransparency = 1}, main)
 
 local farmPage = new("ScrollingFrame", {
@@ -98,109 +98,4 @@ local function panel(page, step, titleText, tag)
     local st = new("Frame", {Size = UDim2.new(0, 26, 0, 20), Position = UDim2.new(0, 0, 0, 2), BackgroundTransparency = 1}, head)
     stroke(st, PINK, 0.4)
     local stT = label(st, step, 11, PINK, Enum.Font.GothamBold, Enum.TextXAlignment.Center)
-    stT.Size = UDim2.new(1, 0, 1, 0)
-    local tt = label(head, titleText, 14, WHITE, Enum.Font.GothamBold)
-    tt.Position = UDim2.new(0, 34, 0, 0)
-    tt.Size = UDim2.new(1, -100, 1, 0)
-    local tg = label(head, tag, 7, MUTED, Enum.Font.GothamBold, Enum.TextXAlignment.Right)
-    tg.Position = UDim2.new(1, -90, 0, 0)
-    tg.Size = UDim2.new(0, 90, 1, 0)
-    return f
-end
-
-local function toggleRow(parentFrame, name, cb)
-    local state = false
-    local b = new("TextButton", {Size = UDim2.new(1, 0, 0, 34), BackgroundColor3 = INPUT, Text = "", AutoButtonColor = false, LayoutOrder = 1}, parentFrame)
-    corner(b, 8)
-    local s = stroke(b, WHITE, 0.88)
-    local t = label(b, name, 12, WHITE)
-    t.Position = UDim2.new(0, 10, 0, 0)
-    t.Size = UDim2.new(1, -60, 1, 0)
-    local track = new("Frame", {Size = UDim2.new(0, 34, 0, 18), Position = UDim2.new(1, -44, 0.5, -9), BackgroundColor3 = OFFTRACK}, b)
-    corner(track, 9)
-    local knob = new("Frame", {Size = UDim2.new(0, 14, 0, 14), Position = UDim2.new(0, 2, 0.5, -7), BackgroundColor3 = WHITE}, track)
-    corner(knob, 7)
-    b.MouseButton1Click:Connect(function()
-        state = not state
-        track.BackgroundColor3 = state and PINK or OFFTRACK
-        knob.Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
-        s.Color = state and PINK or WHITE
-        s.Transparency = state and 0.3 or 0.88
-        pcall(cb, state)
-    end)
-end
-
-------------------------------------------------------------
--- FITUR AUTO FARM BERDASARKAN LOG
-------------------------------------------------------------
-local FARM = {Attack = false, SkillE = false, SkillR = false}
-
-local function getCastRemote()
-    local folder = RS:FindFirstChild("Remotes")
-    if folder then
-        return folder:FindFirstChild("Cast")
-    end
-    return nil
-end
-
-local function fireCast(skill)
-    local remote = getCastRemote()
-    local c = lp.Character
-    local hrp = c and c:FindFirstChild("HumanoidRootPart")
-    if remote and hrp then
-        local p = hrp.Position
-        remote:FireServer(skill, p.X, p.Y, p.Z, nil)
-    end
-end
-
-local farmPanel = panel(farmPage, "01", "Auto Combat", "REMOTE ENGINE")
-toggleRow(farmPanel, "Auto Attack", function(v) FARM.Attack = v end)
-toggleRow(farmPanel, "Auto Skill E", function(v) FARM.SkillE = v end)
-toggleRow(farmPanel, "Auto Skill R", function(v) FARM.SkillR = v end)
-
--- Looping otomatis berdasarkan data remote Cast dari log
-task.spawn(function()
-    while task.wait(0.25) do
-        if FARM.Attack then pcall(fireCast, "attack") end
-    end
-end)
-task.spawn(function()
-    while task.wait(1) do
-        if FARM.SkillE then pcall(fireCast, "E") end
-        if FARM.SkillR then pcall(fireCast, "R") end
-    end
-end)
-
-------------------------------------------------------------
--- minimize + drag
-------------------------------------------------------------
-local icon = new("TextButton", {
-    Size = UDim2.new(0, 46, 0, 46), Position = UDim2.new(0, 12, 0.4, 0), BackgroundColor3 = BG,
-    Text = "S", TextSize = 24, Font = Enum.Font.GothamBlack, TextColor3 = PINK, Visible = false,
-}, gui)
-corner(icon, 8)
-stroke(icon, PINK, 0)
-
-minBtn.MouseButton1Click:Connect(function() main.Visible = false; icon.Visible = true end)
-icon.MouseButton1Click:Connect(function() main.Visible = true; icon.Visible = false end)
-
-local function drag(handle, obj)
-    local dragging, start, sp
-    handle.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            dragging, start, sp = true, i.Position, obj.Position
-            i.Changed:Connect(function()
-                if i.UserInputState == Enum.UserInputState.End then dragging = false end
-            end)
-        end
-    end)
-    UIS.InputChanged:Connect(function(i)
-        if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-            local d = i.Position - start
-            obj.Position = UDim2.new(sp.X.Scale, sp.X.Offset + d.X, sp.Y.Scale, sp.Y.Offset + d.Y)
-        end
-    end)
-end
-drag(header, main)
-drag(icon, icon)
-
+    stT.Size =
