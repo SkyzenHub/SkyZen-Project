@@ -1,3 +1,5 @@
+-- SKYZEN TOOLKIT: FIXED VERSION
+
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RS = game:GetService("ReplicatedStorage")
@@ -30,7 +32,7 @@ end
 
 -- ===== GUI utama =====
 local parent = lp:WaitForChild("PlayerGui")
-if gethui then
+if type(gethui) == "function" then
     local ok, h = pcall(gethui)
     if ok and h then parent = h end
 end
@@ -176,21 +178,19 @@ local progPanel = panel(farmPage, "03", "Progression & Pets", "ADVANCED")
 toggleRow(progPanel, "Auto Rebirth", function(v) SETTINGS.Rebirth = v end)
 toggleRow(progPanel, "Auto Best Pet", function(v) SETTINGS.BestPet = v end)
 
--- Looping Ultra Auto Click (Berjalan sangat cepat menggunakan task.defer / loop kilat)
+-- Looping Ultra Auto Click
 task.spawn(function()
     while true do
         if SETTINGS.AutoClick then
             pcall(function()
-                -- Mencari remote klik / latihan klik jika ada, atau menembak klik klik berkecepatan tinggi
                 local clickRemote = getRemote("Click") or getRemote("Train") or getRemote("ClickButton")
                 if clickRemote then
                     clickRemote:FireServer()
                 else
-                    -- Alternatif jika game memakai sistem klik mentah / cast
                     fireCast("attack")
                 end
             end)
-            task.wait(0.01) -- Interval super cepat (bisa diubah agar lebih cepat)
+            task.wait(0.01)
         else
             task.wait(0.2)
         end
@@ -265,4 +265,3 @@ local function drag(handle, obj)
 end
 drag(header, main)
 drag(icon, icon)
-
