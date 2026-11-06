@@ -1,6 +1,3 @@
-Berikut adalah script lengkap dengan tambahan fitur Auto Click (klik sangat cepat) yang disesuaikan dengan struktur game dan antarmuka SKYZEN:
--- SKYZEN TOOLKIT: AUTO COMBAT, REBIRTH, BEST PET, & ULTRA AUTO CLICK
-
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RS = game:GetService("ReplicatedStorage")
