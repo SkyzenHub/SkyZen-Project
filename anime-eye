@@ -547,8 +547,8 @@ local function addToggle(page, name, default, callback)
     local state = default
     local b = Instance.new("TextButton")
     b.Size = UDim2.new(1, -6, 0, 30)
-    b.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-    b.BackgroundTransparency = 0.25
+    b.BackgroundColor3 = Color3.fromRGB(55, 55, 64)
+    b.BackgroundTransparency = 0.1
     b.Font = Enum.Font.GothamBold
     b.TextSize = 13
     b.TextColor3 = Color3.fromRGB(220, 220, 225)
@@ -556,6 +556,14 @@ local function addToggle(page, name, default, callback)
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
     local s = Instance.new("UIStroke", b)
     b.Text = ""
+
+    -- Lapisan hitam: menyapu dari kiri ke kanan saat ON, menyusut saat OFF
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(0, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    fill.BorderSizePixel = 0
+    fill.Parent = b
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 8)
 
     local txt = Instance.new("TextLabel")
     txt.Size = UDim2.new(1, 0, 1, 0)
@@ -565,15 +573,23 @@ local function addToggle(page, name, default, callback)
     txt.TextColor3 = Color3.new(1, 1, 1)
     txt.Parent = b
 
-    local function refresh()
+    local function refresh(animate)
         txt.Text = name .. "  :  " .. (state and "ON" or "OFF")
-        s.Color = state and Color3.new(1, 1, 1) or GREY
+        local goalSize = UDim2.new(state and 1 or 0, 0, 1, 0)
+        local goalColor = state and Color3.new(1, 1, 1) or GREY
+        if animate then
+            TS:Create(fill, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = goalSize}):Play()
+            TS:Create(s, TweenInfo.new(0.35), {Color = goalColor}):Play()
+        else
+            fill.Size = goalSize
+            s.Color = goalColor
+        end
     end
-    refresh()
+    refresh(false)
 
     b.MouseButton1Click:Connect(function()
         state = not state
-        refresh()
+        refresh(true)
         pcall(callback, state)
         SaveConfig()
     end)
