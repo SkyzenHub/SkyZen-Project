@@ -565,6 +565,16 @@ local function addToggle(page, name, default, callback)
     fill.Parent = b
     Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 8)
 
+    -- Pita hitam tebal yang terus bergerak selama ON
+    local shine = Instance.new("UIGradient", fill)
+    shine.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(95, 95, 105)),
+        ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 0, 0)),
+        ColorSequenceKeypoint.new(0.7, Color3.fromRGB(0, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(95, 95, 105)),
+    })
+    local shimmer = nil
+
     local txt = Instance.new("TextLabel")
     txt.Size = UDim2.new(1, 0, 1, 0)
     txt.BackgroundTransparency = 1
@@ -576,13 +586,24 @@ local function addToggle(page, name, default, callback)
     local function refresh(animate)
         txt.Text = name .. "  :  " .. (state and "ON" or "OFF")
         local goalSize = UDim2.new(state and 1 or 0, 0, 1, 0)
-        local goalColor = state and Color3.new(1, 1, 1) or GREY
+        local goalColor = state and Color3.fromRGB(0, 0, 0) or GREY
         if animate then
             TS:Create(fill, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = goalSize}):Play()
-            TS:Create(s, TweenInfo.new(0.35), {Color = goalColor}):Play()
+            TS:Create(s, TweenInfo.new(0.35), {Color = goalColor, Thickness = state and 2.5 or 1}):Play()
         else
             fill.Size = goalSize
             s.Color = goalColor
+            s.Thickness = state and 2.5 or 1
+        end
+        if state then
+            if not shimmer then
+                shine.Offset = Vector2.new(-1, 0)
+                shimmer = TS:Create(shine, TweenInfo.new(1.4, Enum.EasingStyle.Linear, Enum.EasingDirection.In, -1), {Offset = Vector2.new(1, 0)})
+                shimmer:Play()
+            end
+        elseif shimmer then
+            shimmer:Cancel()
+            shimmer = nil
         end
     end
     refresh(false)
