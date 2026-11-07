@@ -33,7 +33,7 @@ local BYTES_REBIRTH = { 13 }
 ------------------------------------------------------------
 -- AUTO SAVE
 ------------------------------------------------------------
-local SAVE_FILE = "SkyZenHub_+1 Spear Throwing.json"
+local SAVE_FILE = "SkyZenHub_AnimeEyes.json"
 local SAVE_KEYS = {"THUNDERBOLT", "BEST_PET", "REBIRTH", "SPEED_ENABLED", "SPEED_VALUE", "ANTI_AFK"}
 local ConfigLocked = false
 
