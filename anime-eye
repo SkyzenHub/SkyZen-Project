@@ -1,231 +1,103 @@
-
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
+local TS = game:GetService("TweenService")
 local RS = game:GetService("ReplicatedStorage")
-local lp = Players.LocalPlayer or Players.PlayerAdded:Wait()
-
-local PINK = Color3.fromRGB(255, 49, 93)
-local BG = Color3.fromRGB(9, 7, 11)
-local PANEL = Color3.fromRGB(20, 16, 24)
-local INPUT = Color3.fromRGB(8, 7, 10)
-local MUTED = Color3.fromRGB(170, 163, 173)
-local GREEN = Color3.fromRGB(85, 223, 155)
-local WHITE = Color3.new(1, 1, 1)
-local OFFTRACK = Color3.fromRGB(50, 45, 55)
-
--- ===== Helper UI =====
-local function new(class, props, parent)
-    local o = Instance.new(class)
-    for k, v in pairs(props) do o[k] = v end
-    if parent then o.Parent = parent end
-    return o
-end
-local function corner(o, r) new("UICorner", {CornerRadius = UDim.new(0, r)}, o) end
-local function stroke(o, col, tr) return new("UIStroke", {Color = col, Transparency = tr or 0, Thickness = 1}, o) end
-local function label(parent, text, size, color, font, x)
-    return new("TextLabel", {
-        BackgroundTransparency = 1, Text = text, TextSize = size, TextColor3 = color,
-        Font = font or Enum.Font.GothamBold, TextXAlignment = x or Enum.TextXAlignment.Left,
-    }, parent)
-end
-
--- ===== UI Initialization =====
-local playerGui = lp:WaitForChild("PlayerGui")
-if type(gethui) == "function" then
-    local ok, h = pcall(gethui)
-    if ok and h then playerGui = h end
-end
-pcall(function()
-    local old = playerGui:FindFirstChild("SkyzenToolkit")
-    if old then old:Destroy() end
-end)
-
-local gui = new("ScreenGui", {Name = "SkyzenToolkit", ResetOnSpawn = false, DisplayOrder = 999}, playerGui)
-
-local main = new("Frame", {
-    Size = UDim2.new(0, 330, 0, 440), Position = UDim2.new(0.5, -165, 0.5, -220),
-    BackgroundColor3 = BG, Active = true,
-}, gui)
-corner(main, 13)
-stroke(main, PINK, 0.55)
-new("UIGradient", {
-    Rotation = 90,
-    Color = ColorSequence.new(Color3.fromRGB(22, 16, 26), Color3.fromRGB(9, 7, 11)),
-}, main)
-
--- Header UI
-local header = new("Frame", {Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, Active = true}, main)
-local mark = new("Frame", {Size = UDim2.new(0, 32, 0, 32), Position = UDim2.new(0, 12, 0, 9), BackgroundTransparency = 1}, header)
-stroke(mark, PINK, 0)
-corner(mark, 4)
-local markT = label(mark, "S", 20, PINK, Enum.Font.GothamBlack, Enum.TextXAlignment.Center)
-markT.Size = UDim2.new(1, 0, 1, 0)
-local title = label(header, "SKYZEN", 14, WHITE, Enum.Font.GothamBlack)
-title.Position = UDim2.new(0, 52, 0, 9)
-title.Size = UDim2.new(0, 120, 0, 18)
-local sub = label(header, "AUTO UNLOCK FIXED", 8, MUTED)
-sub.Position = UDim2.new(0, 52, 0, 27)
-sub.Size = UDim2.new(0, 120, 0, 12)
-local statusLbl = label(header, "● ACTIVE", 8, GREEN, Enum.Font.GothamBold, Enum.TextXAlignment.Right)
-statusLbl.Position = UDim2.new(1, -150, 0, 0)
-statusLbl.Size = UDim2.new(0, 108, 1, 0)
-
-local minBtn = new("TextButton", {
-    Size = UDim2.new(0, 26, 0, 26), Position = UDim2.new(1, -36, 0, 12),
-    BackgroundColor3 = INPUT, Text = "–", TextSize = 16, Font = Enum.Font.GothamBold, TextColor3 = WHITE,
-}, header)
-corner(minBtn, 6)
-new("Frame", {Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 0, 50), BackgroundColor3 = WHITE, BackgroundTransparency = 0.88, BorderSizePixel = 0}, main)
-
--- Tab Selector Bar
-local tabBar = new("Frame", {Size = UDim2.new(1, -16, 0, 30), Position = UDim2.new(0, 8, 0, 56), BackgroundTransparency = 1}, main)
-local tabLayout = new("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6)}, tabBar)
-
-local container = new("Frame", {Size = UDim2.new(1, -16, 1, -96), Position = UDim2.new(0, 8, 0, 90), BackgroundTransparency = 1}, main)
-
-local page1 = new("ScrollingFrame", {
-    Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0,
-    ScrollBarThickness = 3, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = true,
-}, container)
-new("UIListLayout", {Padding = UDim.new(0, 8)}, page1)
-
-local page2 = new("ScrollingFrame", {
-    Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0,
-    ScrollBarThickness = 3, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false,
-}, container)
-new("UIListLayout", {Padding = UDim.new(0, 8)}, page2)
-
-local function createTabButton(name, targetPage)
-    local btn = new("TextButton", {
-        Size = UDim2.new(0.5, -3, 1, 0), BackgroundColor3 = INPUT,
-        Text = name, TextSize = 11, Font = Enum.Font.GothamBold, TextColor3 = MUTED,
-    }, tabBar)
-    corner(btn, 6)
-    stroke(btn, WHITE, 0.88)
-
-    btn.MouseButton1Click:Connect(function()
-        page1.Visible = (targetPage == 1)
-        page2.Visible = (targetPage == 2)
-        for _, child in ipairs(tabBar:GetChildren()) do
-            if child:IsA("TextButton") then
-                child.BackgroundColor3 = INPUT
-                child.TextColor3 = MUTED
-            end
-        end
-        btn.BackgroundColor3 = PINK
-        btn.TextColor3 = WHITE
-    end)
-    return btn
-end
-
-local btn1 = createTabButton("COMBAT & CLICK", 1)
-btn1.BackgroundColor3 = PINK
-btn1.TextColor3 = WHITE
-createTabButton("PROGRESSION", 2)
-
-local function panel(page, step, titleText, tag)
-    local f = new("Frame", {Size = UDim2.new(1, -6, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundColor3 = PANEL}, page)
-    corner(f, 10)
-    stroke(f, WHITE, 0.88)
-    new("UIPadding", {PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10), PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10)}, f)
-    new("UIListLayout", {Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder}, f)
-    local head = new("Frame", {Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, LayoutOrder = 0}, f)
-    local st = new("Frame", {Size = UDim2.new(0, 26, 0, 20), Position = UDim2.new(0, 0, 0, 2), BackgroundTransparency = 1}, head)
-    stroke(st, PINK, 0.4)
-    local stT = label(st, step, 11, PINK, Enum.Font.GothamBold, Enum.TextXAlignment.Center)
-    stT.Size = UDim2.new(1, 0, 1, 0)
-    local tt = label(head, titleText, 14, WHITE, Enum.Font.GothamBold)
-    tt.Position = UDim2.new(0, 34, 0, 0)
-    tt.Size = UDim2.new(1, -100, 1, 0)
-    local tg = label(head, tag, 7, MUTED, Enum.Font.GothamBold, Enum.TextXAlignment.Right)
-    tg.Position = UDim2.new(1, -90, 0, 0)
-    tg.Size = UDim2.new(0, 90, 1, 0)
-    return f
-end
-
-local function toggleRow(parentFrame, name, cb)
-    local state = false
-    local b = new("TextButton", {Size = UDim2.new(1, 0, 0, 34), BackgroundColor3 = INPUT, Text = "", AutoButtonColor = false, LayoutOrder = 1}, parentFrame)
-    corner(b, 8)
-    local s = stroke(b, WHITE, 0.88)
-    local t = label(b, name, 12, WHITE)
-    t.Position = UDim2.new(0, 10, 0, 0)
-    t.Size = UDim2.new(1, -60, 1, 0)
-    local track = new("Frame", {Size = UDim2.new(0, 34, 0, 18), Position = UDim2.new(1, -44, 0.5, -9), BackgroundColor3 = OFFTRACK}, b)
-    corner(track, 9)
-    local knob = new("Frame", {Size = UDim2.new(0, 14, 0, 14), Position = UDim2.new(0, 2, 0.5, -7), BackgroundColor3 = WHITE}, track)
-    corner(knob, 7)
-    b.MouseButton1Click:Connect(function()
-        state = not state
-        track.BackgroundColor3 = state and PINK or OFFTRACK
-        knob.Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
-        s.Color = state and PINK or WHITE
-        s.Transparency = state and 0.3 or 0.88
-        pcall(cb, state)
-    end)
-end
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 
 ------------------------------------------------------------
--- LOGIKA UTAMA
+-- PENGATURAN (ubah di sini)
 ------------------------------------------------------------
-local SETTINGS = {
-    AutoClick = false,
-    Attack = false,
-    SkillE = false,
-    SkillR = false,
-    Rebirth = false,
-    BestPet = false,
-    ClaimCakra = false,
-    AutoEyes = false,
+local TITLE = "SKYZENHUB (ANIME EYES)"
+local PHOTO_URL = "https://raw.githubusercontent.com/SkyzenHub/FOTO-SKYZEN/refs/heads/main/file_00000000f5548211add457d612909d05.png"
+local LOGO_URL = PHOTO_URL
+local LOADING_URL = "https://raw.githubusercontent.com/SkyzenHub/FOTO-SKYZEN/refs/heads/main/1794024795815.jpg" -- gambar latar kartu loading
+local LOAD_TIME = 10 -- lama loading (detik)
+
+local CONFIG = {
+    ENABLED = true,
+    AUTO_CLICK = false,
+    ATTACK = false,
+    SKILL_E = false,
+    SKILL_R = false,
+    REBIRTH = false,
+    BEST_PET = false,
+    SPEED_ENABLED = false,
+    SPEED_VALUE = 32,
+    ANTI_AFK = true,
 }
 
+------------------------------------------------------------
+-- AUTO SAVE
+------------------------------------------------------------
+local SAVE_FILE = "SkyZenHub_Toolkit.json"
+local SAVE_KEYS = {"AUTO_CLICK", "ATTACK", "SKILL_E", "SKILL_R", "REBIRTH", "BEST_PET", "SPEED_ENABLED", "SPEED_VALUE", "ANTI_AFK"}
+local ConfigLocked = false
+
+local function LoadConfig()
+    if not (isfile and readfile) then return end
+    local ok, data = pcall(function()
+        if not isfile(SAVE_FILE) then return nil end
+        return HttpService:JSONDecode(readfile(SAVE_FILE))
+    end)
+    if ok and type(data) == "table" then
+        for _, key in ipairs(SAVE_KEYS) do
+            if type(data[key]) == type(CONFIG[key]) then CONFIG[key] = data[key] end
+        end
+    end
+end
+
+local function SaveNow()
+    if not writefile or ConfigLocked then return end
+    local data = {}
+    for _, key in ipairs(SAVE_KEYS) do data[key] = CONFIG[key] end
+    pcall(function() writefile(SAVE_FILE, HttpService:JSONEncode(data)) end)
+end
+
+local savePending = false
+local function SaveConfig()
+    if savePending then return end
+    savePending = true
+    task.delay(0.5, function()
+        savePending = false
+        SaveNow()
+    end)
+end
+
+LoadConfig()
+
+------------------------------------------------------------
+-- LOGIKA
+------------------------------------------------------------
+local cache = {}
 local function getRemote(name)
+    local c = cache[name]
+    if c and c.Parent then return c end
     for _, v in ipairs(RS:GetDescendants()) do
         if v.Name == name and (v:IsA("RemoteEvent") or v:IsA("RemoteFunction")) then
+            cache[name] = v
             return v
         end
     end
     return nil
 end
 
-local function sendCast(actionName)
+local function sendCast(action)
     local castRemote = getRemote("Cast")
-    local char = lp.Character
+    local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    
     if castRemote and hrp then
-        pcall(function()
-            castRemote:FireServer(actionName, hrp.Position)
-        end)
+        pcall(function() castRemote:FireServer(action, hrp.Position) end)
     end
 end
 
--- UI Panels
-local clickPanel = panel(page1, "01", "Auto Clicker", "FAST SPEED")
-toggleRow(clickPanel, "Ultra Auto Click", function(v) SETTINGS.AutoClick = v end)
-
-local combatPanel = panel(page1, "02", "Auto Combat", "REMOTE ENGINE")
-toggleRow(combatPanel, "Auto Attack", function(v) SETTINGS.Attack = v end)
-toggleRow(combatPanel, "Auto Skill E", function(v) SETTINGS.SkillE = v end)
-toggleRow(combatPanel, "Auto Skill R", function(v) SETTINGS.SkillR = v end)
-
-local progPanel = panel(page2, "01", "Progression & Eyes", "ADVANCED")
-toggleRow(progPanel, "Auto Rebirth", function(v) SETTINGS.Rebirth = v end)
-toggleRow(progPanel, "Auto Best Pet", function(v) SETTINGS.BestPet = v end)
-toggleRow(progPanel, "Tap 2x Cakra (Claim)", function(v) SETTINGS.ClaimCakra = v end)
-toggleRow(progPanel, "Auto Unlock Eyes", function(v) SETTINGS.AutoEyes = v end)
-
--- Loops
 task.spawn(function()
-    while true do
-        if SETTINGS.AutoClick then
+    while CONFIG.ENABLED do
+        if CONFIG.AUTO_CLICK then
             pcall(function()
-                local clickRemote = getRemote("Click") or getRemote("Train")
-                if clickRemote then
-                    clickRemote:FireServer()
-                else
-                    sendCast("attack")
-                end
+                local r = getRemote("Click") or getRemote("Train")
+                if r then r:FireServer() else sendCast("attack") end
             end)
             task.wait(0.01)
         else
@@ -235,91 +107,678 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while task.wait(0.25) do
-        if SETTINGS.Attack then 
-            sendCast("attack")
-        end
+    while CONFIG.ENABLED do
+        task.wait(0.25)
+        if CONFIG.ATTACK then sendCast("attack") end
     end
 end)
 
 task.spawn(function()
-    while task.wait(0.5) do
-        if SETTINGS.SkillE then sendCast("E") end
-        if SETTINGS.SkillR then sendCast("R") end
+    while CONFIG.ENABLED do
+        task.wait(0.5)
+        if CONFIG.SKILL_E then sendCast("E") end
+        if CONFIG.SKILL_R then sendCast("R") end
     end
 end)
 
 task.spawn(function()
-    while task.wait(0.5) do
-        if SETTINGS.Rebirth then
+    while CONFIG.ENABLED do
+        task.wait(0.5)
+        if CONFIG.REBIRTH then
             pcall(function()
                 local r = getRemote("Rebirth")
                 if r then
                     if r:IsA("RemoteEvent") then r:FireServer()
-                    elseif r:IsA("RemoteFunction") then r:InvokeServer() end
+                    else r:InvokeServer() end
                 end
             end)
         end
-
-        if SETTINGS.BestPet then
+        if CONFIG.BEST_PET then
             pcall(function()
-                local petAction = getRemote("PetAction")
-                if petAction then
-                    petAction:InvokeServer("equipBest", nil)
-                end
-            end)
-        end
-
-        if SETTINGS.ClaimCakra then
-            pcall(function()
-                local castRemote = getRemote("Cast")
-                if castRemote then
-                    castRemote:FireServer("claim", 24)
-                end
-            end)
-        end
-
-        -- Auto Unlock Eyes (Memanggil remote UnlockEye secara berkala tanpa argumen angka)
-        if SETTINGS.AutoEyes then
-            pcall(function()
-                local unlockEyeRemote = getRemote("UnlockEye")
-                if unlockEyeRemote then
-                    unlockEyeRemote:FireServer()
-                end
+                local p = getRemote("PetAction")
+                if p then p:InvokeServer("equipBest", nil) end
             end)
         end
     end
 end)
 
-------------------------------------------------------------
--- Minimize & Drag Utility
-------------------------------------------------------------
-local icon = new("TextButton", {
-    Size = UDim2.new(0, 46, 0, 46), Position = UDim2.new(0, 12, 0.4, 0), BackgroundColor3 = BG,
-    Text = "S", TextSize = 24, Font = Enum.Font.GothamBlack, TextColor3 = PINK, Visible = false,
-}, gui)
-corner(icon, 8)
-stroke(icon, PINK, 0)
 
-minBtn.MouseButton1Click:Connect(function() main.Visible = false; icon.Visible = true end)
-icon.MouseButton1Click:Connect(function() main.Visible = true; icon.Visible = false end)
+-- Speed Hack
+local OriginalSpeed = nil
+local function UpdateSpeed()
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    if CONFIG.SPEED_ENABLED then
+        if not OriginalSpeed then OriginalSpeed = hum.WalkSpeed end
+        hum.WalkSpeed = CONFIG.SPEED_VALUE
+    elseif OriginalSpeed then
+        hum.WalkSpeed = OriginalSpeed
+        OriginalSpeed = nil
+    end
+end
 
-local function drag(handle, obj)
-    local dragging, start, sp
+LocalPlayer.CharacterAdded:Connect(function() OriginalSpeed = nil end)
+local speedConn = RunService.Heartbeat:Connect(function()
+    if CONFIG.ENABLED then UpdateSpeed() end
+end)
+
+-- Anti AFK
+local VirtualUser = game:GetService("VirtualUser")
+LocalPlayer.Idled:Connect(function()
+    if CONFIG.ANTI_AFK and CONFIG.ENABLED then
+        pcall(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
+    end
+end)
+
+------------------------------------------------------------
+-- UI
+------------------------------------------------------------
+local parent = (gethui and gethui()) or game:GetService("CoreGui")
+if parent:FindFirstChild("SkyzenGUI") then parent.SkyzenGUI:Destroy() end
+
+local RED = Color3.fromRGB(0, 0, 0) -- aksen (hitam)
+local DARK = Color3.fromRGB(10, 10, 14)
+local GREY = Color3.fromRGB(60, 60, 70)
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "SkyzenGUI"
+gui.ResetOnSpawn = false
+gui.Parent = parent
+
+-- Muat gambar
+local function isImage(data)
+    if type(data) ~= "string" or #data < 100 then return false end
+    local h = data:sub(1, 4)
+    return h == "\137PNG" or h:sub(1, 2) == "\255\216" or h == "RIFF"
+end
+
+local function loadImage(url, fname)
+    if url == "" then return nil, "URL kosong" end
+    if not writefile then return nil, "executor tidak punya writefile" end
+    local getAsset = getcustomasset or getsynasset
+    if not getAsset then return nil, "executor tidak punya getcustomasset" end
+
+    local data
+    local req = (syn and syn.request) or request or http_request
+    if req then
+        local ok, res = pcall(function() return req({Url = url, Method = "GET"}) end)
+        if ok and res and isImage(res.Body) then data = res.Body end
+    end
+    if not data then
+        local ok, r = pcall(function() return game:HttpGet(url) end)
+        if ok and isImage(r) then data = r end
+    end
+    if not data then return nil, "unduhan gagal atau bukan gambar" end
+
+    local ok3, err3 = pcall(writefile, fname, data)
+    if not ok3 then return nil, "writefile gagal: " .. tostring(err3) end
+    local ok4, id = pcall(getAsset, fname)
+    if not ok4 or not id then return nil, "getcustomasset gagal" end
+    return id
+end
+
+local photoId, photoErr = loadImage(PHOTO_URL, "skyzenhub_bg.png")
+if not photoId then print("[SkyZenHub] Foto gagal: " .. tostring(photoErr)) end
+local logoId = photoId
+if LOGO_URL ~= PHOTO_URL then
+    logoId = loadImage(LOGO_URL, "skyzenhub_logo.png")
+end
+
+-- Gambar latar kartu loading (kalau gagal, pakai foto utama)
+local loadingId = loadImage(LOADING_URL, "skyzenhub_loading.jpg") or photoId
+
+-- Logo bulat: latar merah-hitam berputar + gambar (atau tulisan SZ kalau gambar gagal)
+local function makeLogo(obj)
+    obj.BackgroundTransparency = 1
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = Color3.new(1, 1, 1)
+    bg.BorderSizePixel = 0
+    bg.ZIndex = 1
+    bg.Parent = obj
+    Instance.new("UICorner", bg).CornerRadius = UDim.new(1, 0)
+    local g = Instance.new("UIGradient", bg)
+    g.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, RED),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 0, 0)),
+        ColorSequenceKeypoint.new(1, RED),
+    })
+    TS:Create(g, TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.In, -1), {Rotation = 360}):Play()
+    local st = Instance.new("UIStroke", bg)
+    st.Color = RED
+    st.Thickness = 1.5
+
+    if logoId then
+        local img = Instance.new("ImageLabel")
+        img.Size = UDim2.new(1, -4, 1, -4)
+        img.Position = UDim2.new(0, 2, 0, 2)
+        img.BackgroundTransparency = 1
+        img.Image = logoId
+        img.ScaleType = Enum.ScaleType.Crop
+        img.ZIndex = 2
+        img.Parent = obj
+        Instance.new("UICorner", img).CornerRadius = UDim.new(1, 0)
+    else
+        local t = Instance.new("TextLabel")
+        t.Size = UDim2.new(1, 0, 1, 0)
+        t.BackgroundTransparency = 1
+        t.Text = "SZ"
+        t.Font = Enum.Font.GothamBlack
+        t.TextScaled = true
+        t.TextColor3 = Color3.new(1, 1, 1)
+        t.ZIndex = 2
+        t.Parent = obj
+        Instance.new("UITextSizeConstraint", t).MaxTextSize = 20
+    end
+end
+
+------------------------------------------------------------
+-- LOADING SCREEN
+------------------------------------------------------------
+local loader = Instance.new("CanvasGroup")
+loader.Name = "Loader"
+loader.AnchorPoint = Vector2.new(0.5, 0.5)
+loader.Position = UDim2.new(0.5, 0, 0.5, 0)
+loader.Size = UDim2.new(0, 280, 0, 170)
+loader.BackgroundTransparency = 1
+loader.BorderSizePixel = 0
+loader.Active = true
+loader.ZIndex = 50
+loader.Parent = gui
+
+local lbg = Instance.new("Frame")
+lbg.Size = UDim2.new(1, 0, 1, 0)
+lbg.BackgroundColor3 = Color3.new(1, 1, 1)
+lbg.BorderSizePixel = 0
+lbg.Parent = loader
+Instance.new("UICorner", lbg).CornerRadius = UDim.new(0, 14)
+local lbgGrad = Instance.new("UIGradient", lbg)
+lbgGrad.Rotation = 90
+lbgGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 34)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(6, 6, 10)),
+})
+local lbgStroke = Instance.new("UIStroke", lbg)
+lbgStroke.Color = RED
+lbgStroke.Thickness = 1.5
+TS:Create(lbgStroke, TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Transparency = 0.7}):Play()
+
+-- Gambar latar kartu loading
+if loadingId then
+    local lImgBg = Instance.new("ImageLabel")
+    lImgBg.Size = UDim2.new(1, 0, 1, 0)
+    lImgBg.BackgroundTransparency = 1
+    lImgBg.Image = loadingId
+    lImgBg.ScaleType = Enum.ScaleType.Crop
+    lImgBg.ImageTransparency = 0.15
+    lImgBg.Parent = lbg
+    Instance.new("UICorner", lImgBg).CornerRadius = UDim.new(0, 14)
+
+    local lShade = Instance.new("Frame")
+    lShade.Size = UDim2.new(1, 0, 1, 0)
+    lShade.BackgroundColor3 = Color3.new(1, 1, 1)
+    lShade.BackgroundTransparency = 0.4
+    lShade.BorderSizePixel = 0
+    lShade.Parent = lbg
+    Instance.new("UICorner", lShade).CornerRadius = UDim.new(0, 14)
+end
+
+local lLogo = Instance.new("Frame")
+lLogo.AnchorPoint = Vector2.new(0.5, 0)
+lLogo.Position = UDim2.new(0.5, 0, 0, 18)
+lLogo.Size = UDim2.new(0, 56, 0, 56)
+lLogo.Parent = loader
+makeLogo(lLogo)
+
+local lTitle = Instance.new("TextLabel")
+lTitle.Position = UDim2.new(0, 0, 0, 82)
+lTitle.Size = UDim2.new(1, 0, 0, 24)
+lTitle.BackgroundTransparency = 1
+lTitle.Text = TITLE
+lTitle.Font = Enum.Font.GothamBlack
+lTitle.TextSize = 16
+lTitle.TextColor3 = Color3.fromRGB(0, 0, 0)
+lTitle.Parent = loader
+
+local lStatus = Instance.new("TextLabel")
+lStatus.Position = UDim2.new(0, 0, 0, 108)
+lStatus.Size = UDim2.new(1, 0, 0, 18)
+lStatus.BackgroundTransparency = 1
+lStatus.Text = "Initializing..."
+lStatus.Font = Enum.Font.GothamBlack
+lStatus.TextSize = 13
+lStatus.TextColor3 = Color3.fromRGB(0, 0, 0)
+lStatus.Parent = loader
+
+local lBar = Instance.new("Frame")
+lBar.AnchorPoint = Vector2.new(0.5, 0)
+lBar.Position = UDim2.new(0.5, 0, 0, 138)
+lBar.Size = UDim2.new(0, 220, 0, 6)
+lBar.BackgroundColor3 = Color3.fromRGB(80, 80, 90)
+lBar.BorderSizePixel = 0
+lBar.Parent = loader
+Instance.new("UICorner", lBar).CornerRadius = UDim.new(1, 0)
+
+local lFill = Instance.new("Frame")
+lFill.Size = UDim2.new(0, 0, 1, 0)
+lFill.BackgroundColor3 = RED
+lFill.BorderSizePixel = 0
+lFill.Parent = lBar
+Instance.new("UICorner", lFill).CornerRadius = UDim.new(1, 0)
+
+local function setProgress(p, text, dur)
+    lStatus.Text = text
+    TS:Create(lFill, TweenInfo.new(dur or 0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(p, 0, 1, 0)}):Play()
+end
+
+local loadStart = os.clock()
+setProgress(0.1, "Initializing...", 1.2)
+task.wait(1.5)
+
+------------------------------------------------------------
+-- WINDOW UTAMA
+------------------------------------------------------------
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 340, 0, 280)
+main.Position = UDim2.new(0.5, -170, 0.5, -140)
+main.BackgroundColor3 = DARK
+main.ClipsDescendants = true
+main.Visible = false
+main.Parent = gui
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+
+local grad = Instance.new("UIGradient", main)
+grad.Rotation = 90
+grad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 34)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(6, 6, 10)),
+})
+
+local stroke = Instance.new("UIStroke", main)
+stroke.Color = RED
+stroke.Thickness = 1.5
+TS:Create(stroke, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Transparency = 0.7}):Play()
+
+setProgress(0.3, "Loading assets...", 1)
+
+if photoId then
+    local bgImg = Instance.new("ImageLabel")
+    bgImg.Size = UDim2.new(1, 0, 1, 0)
+    bgImg.BackgroundTransparency = 1
+    bgImg.Image = photoId
+    bgImg.ScaleType = Enum.ScaleType.Crop
+    bgImg.ZIndex = 1
+    bgImg.Parent = main
+    Instance.new("UICorner", bgImg).CornerRadius = UDim.new(0, 12)
+
+    local shade = Instance.new("Frame")
+    shade.Size = UDim2.new(1, 0, 1, 0)
+    shade.BackgroundColor3 = Color3.new(0, 0, 0)
+    shade.BackgroundTransparency = 0.45
+    shade.BorderSizePixel = 0
+    shade.ZIndex = 1
+    shade.Parent = main
+    Instance.new("UICorner", shade).CornerRadius = UDim.new(0, 12)
+end
+
+setProgress(0.5, "Building interface...", 1)
+
+-- Header
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 42)
+header.BackgroundTransparency = 1
+header.Parent = main
+
+local logo = Instance.new("Frame")
+logo.Size = UDim2.new(0, 30, 0, 30)
+logo.Position = UDim2.new(0, 10, 0, 6)
+logo.Parent = header
+makeLogo(logo)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -130, 1, 0)
+title.Position = UDim2.new(0, 48, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = TITLE
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 13
+title.TextColor3 = Color3.fromRGB(235, 235, 240)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = header
+
+local function topBtn(text, x)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0, 28, 0, 24)
+    b.Position = UDim2.new(1, x, 0, 9)
+    b.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    b.Text = text
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 14
+    b.TextColor3 = Color3.new(1, 1, 1)
+    b.Parent = header
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    return b
+end
+local minBtn = topBtn("-", -66)
+local closeBtn = topBtn("X", -34)
+
+local line = Instance.new("Frame")
+line.Size = UDim2.new(1, -24, 0, 1)
+line.Position = UDim2.new(0, 12, 0, 44)
+line.BackgroundColor3 = GREY
+line.BorderSizePixel = 0
+line.Parent = main
+
+-- Tab bar
+local tabBar = Instance.new("Frame")
+tabBar.Size = UDim2.new(1, -24, 0, 28)
+tabBar.Position = UDim2.new(0, 12, 0, 52)
+tabBar.BackgroundTransparency = 1
+tabBar.Parent = main
+local tl = Instance.new("UIListLayout", tabBar)
+tl.FillDirection = Enum.FillDirection.Horizontal
+tl.Padding = UDim.new(0, 6)
+
+local pages = {}
+local tabButtons = {}
+
+local function selectTab(name)
+    for n, page in pairs(pages) do
+        page.Visible = (n == name)
+        tabButtons[n].BackgroundColor3 = (n == name) and RED or Color3.fromRGB(25, 25, 30)
+    end
+end
+
+local function createTab(name)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0, 70, 1, 0)
+    b.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    b.Text = name
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 11
+    b.TextColor3 = Color3.new(1, 1, 1)
+    b.Parent = tabBar
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    tabButtons[name] = b
+
+    local page = Instance.new("ScrollingFrame")
+    page.Size = UDim2.new(1, -24, 1, -92)
+    page.Position = UDim2.new(0, 12, 0, 86)
+    page.BackgroundTransparency = 1
+    page.BorderSizePixel = 0
+    page.ScrollBarThickness = 3
+    page.CanvasSize = UDim2.new(0, 0, 0, 0)
+    page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    page.Visible = false
+    page.Parent = main
+    Instance.new("UIListLayout", page).Padding = UDim.new(0, 4)
+    pages[name] = page
+
+    b.MouseButton1Click:Connect(function() selectTab(name) end)
+    return page
+end
+
+-- Gambar di dalam petak (toggle / stepper)
+local function addTileImage(obj)
+    if not photoId then return end
+    local img = Instance.new("ImageLabel")
+    img.Size = UDim2.new(1, 0, 1, 0)
+    img.BackgroundTransparency = 1
+    img.Image = photoId
+    img.ScaleType = Enum.ScaleType.Crop
+    img.ImageTransparency = 0.25
+    img.Parent = obj
+    Instance.new("UICorner", img).CornerRadius = UDim.new(0, 8)
+
+    local shade = Instance.new("Frame")
+    shade.Size = UDim2.new(1, 0, 1, 0)
+    shade.BackgroundColor3 = Color3.new(0, 0, 0)
+    shade.BackgroundTransparency = 0.5
+    shade.BorderSizePixel = 0
+    shade.Parent = obj
+    Instance.new("UICorner", shade).CornerRadius = UDim.new(0, 8)
+end
+
+local function addToggle(page, name, default, callback)
+    local state = default
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, -6, 0, 30)
+    b.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+    b.BackgroundTransparency = 0.25
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 13
+    b.TextColor3 = Color3.fromRGB(220, 220, 225)
+    b.Parent = page
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
+    local s = Instance.new("UIStroke", b)
+    b.Text = ""
+
+    local txt = Instance.new("TextLabel")
+    txt.Size = UDim2.new(1, 0, 1, 0)
+    txt.BackgroundTransparency = 1
+    txt.Font = Enum.Font.GothamBold
+    txt.TextSize = 13
+    txt.TextColor3 = Color3.new(1, 1, 1)
+    txt.Parent = b
+
+    local function refresh()
+        txt.Text = name .. "  :  " .. (state and "ON" or "OFF")
+        s.Color = state and Color3.new(1, 1, 1) or GREY
+    end
+    refresh()
+
+    b.MouseButton1Click:Connect(function()
+        state = not state
+        refresh()
+        pcall(callback, state)
+        SaveConfig()
+    end)
+end
+
+local function addStepper(page, name, min, max, step, default, callback)
+    local value = default
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, -6, 0, 34)
+    f.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+    f.BackgroundTransparency = 0.25
+    f.Parent = page
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, 8)
+    local fs = Instance.new("UIStroke", f)
+    fs.Color = GREY
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -90, 1, 0)
+    lbl.Position = UDim2.new(0, 10, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextSize = 13
+    lbl.TextColor3 = Color3.fromRGB(220, 220, 225)
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = f
+
+    local function render() lbl.Text = name .. "  :  " .. tostring(value) end
+    render()
+
+    local function btn(text, x, delta)
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0, 34, 0, 24)
+        b.Position = UDim2.new(1, x, 0.5, -12)
+        b.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        b.Text = text
+        b.Font = Enum.Font.GothamBold
+        b.TextSize = 16
+        b.TextColor3 = Color3.new(1, 1, 1)
+        b.Parent = f
+        Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+        b.MouseButton1Click:Connect(function()
+            value = math.clamp(value + delta, min, max)
+            render()
+            pcall(callback, value)
+            SaveConfig()
+        end)
+    end
+    btn("-", -80, -step)
+    btn("+", -40, step)
+end
+
+-- Tab Click
+local ClickTab = createTab("Click")
+addToggle(ClickTab, "Ultra Auto Click", CONFIG.AUTO_CLICK, function(v) CONFIG.AUTO_CLICK = v end)
+
+-- Tab Combat
+local CombatTab = createTab("Combat")
+addToggle(CombatTab, "Auto Attack", CONFIG.ATTACK, function(v) CONFIG.ATTACK = v end)
+addToggle(CombatTab, "Auto Skill E", CONFIG.SKILL_E, function(v) CONFIG.SKILL_E = v end)
+addToggle(CombatTab, "Auto Skill R", CONFIG.SKILL_R, function(v) CONFIG.SKILL_R = v end)
+
+-- Tab Progress
+local ProgTab = createTab("Progress")
+addToggle(ProgTab, "Auto Rebirth", CONFIG.REBIRTH, function(v) CONFIG.REBIRTH = v end)
+addToggle(ProgTab, "Auto Best Pet", CONFIG.BEST_PET, function(v) CONFIG.BEST_PET = v end)
+
+-- Tab Player
+local PlayerTab = createTab("Player")
+addToggle(PlayerTab, "Speed Hack", CONFIG.SPEED_ENABLED, function(v) CONFIG.SPEED_ENABLED = v end)
+addStepper(PlayerTab, "Speed", 16, 200, 4, CONFIG.SPEED_VALUE, function(v) CONFIG.SPEED_VALUE = v end)
+addToggle(PlayerTab, "Anti AFK", CONFIG.ANTI_AFK, function(v) CONFIG.ANTI_AFK = v end)
+
+selectTab("Click")
+
+-- Ikon saat di-minimize
+local icon = Instance.new("TextButton")
+icon.Size = UDim2.new(0, 50, 0, 50)
+icon.Position = UDim2.new(0, 15, 0.4, 0)
+icon.Text = ""
+icon.Visible = false
+icon.Parent = gui
+makeLogo(icon)
+
+minBtn.MouseButton1Click:Connect(function() main.Visible = false icon.Visible = true end)
+icon.MouseButton1Click:Connect(function() main.Visible = true icon.Visible = false end)
+
+-- Konfirmasi hapus script
+local confirm = Instance.new("Frame")
+confirm.Size = UDim2.new(1, 0, 1, 0)
+confirm.BackgroundColor3 = Color3.new(0, 0, 0)
+confirm.BackgroundTransparency = 0.35
+confirm.BorderSizePixel = 0
+confirm.Active = true
+confirm.Visible = false
+confirm.ZIndex = 20
+confirm.Parent = main
+
+local box = Instance.new("Frame")
+box.AnchorPoint = Vector2.new(0.5, 0.5)
+box.Position = UDim2.new(0.5, 0, 0.5, 0)
+box.Size = UDim2.new(0, 260, 0, 130)
+box.BackgroundColor3 = DARK
+box.ZIndex = 21
+box.Parent = confirm
+Instance.new("UICorner", box).CornerRadius = UDim.new(0, 10)
+local bs = Instance.new("UIStroke", box)
+bs.Color = GREY
+bs.Thickness = 1.5
+
+local ct = Instance.new("TextLabel")
+ct.Size = UDim2.new(1, -20, 0, 24)
+ct.Position = UDim2.new(0, 10, 0, 12)
+ct.BackgroundTransparency = 1
+ct.Text = "Delete script?"
+ct.Font = Enum.Font.GothamBlack
+ct.TextSize = 16
+ct.TextColor3 = Color3.fromRGB(235, 235, 240)
+ct.ZIndex = 22
+ct.Parent = box
+
+local cs = Instance.new("TextLabel")
+cs.Size = UDim2.new(1, -20, 0, 34)
+cs.Position = UDim2.new(0, 10, 0, 38)
+cs.BackgroundTransparency = 1
+cs.Text = "The script will be closed and all features turned off."
+cs.Font = Enum.Font.Gotham
+cs.TextSize = 12
+cs.TextWrapped = true
+cs.TextColor3 = Color3.fromRGB(190, 190, 200)
+cs.ZIndex = 22
+cs.Parent = box
+
+local function confirmBtn(text, x, color)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0.5, -15, 0, 32)
+    b.Position = UDim2.new(x, x == 0 and 10 or 5, 1, -42)
+    b.BackgroundColor3 = color
+    b.Text = text
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 13
+    b.TextColor3 = Color3.new(1, 1, 1)
+    b.ZIndex = 22
+    b.Parent = box
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
+    return b
+end
+local cancelBtn = confirmBtn("Cancel", 0, Color3.fromRGB(35, 35, 42))
+local yesBtn = confirmBtn("Yes, Delete", 0.5, RED)
+
+closeBtn.MouseButton1Click:Connect(function() confirm.Visible = true end)
+cancelBtn.MouseButton1Click:Connect(function() confirm.Visible = false end)
+yesBtn.MouseButton1Click:Connect(function()
+    SaveNow()
+    ConfigLocked = true
+    CONFIG.SPEED_ENABLED = false
+    UpdateSpeed()
+    CONFIG.ENABLED = false
+    speedConn:Disconnect()
+    gui:Destroy()
+end)
+
+-- Geser
+local function makeDraggable(handle, obj)
+    local dragging, start, startPos
     handle.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            dragging, start, sp = true, i.Position, obj.Position
+        if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            start = i.Position
+            startPos = obj.Position
             i.Changed:Connect(function()
                 if i.UserInputState == Enum.UserInputState.End then dragging = false end
             end)
         end
     end)
     UIS.InputChanged:Connect(function(i)
-        if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+        if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
             local d = i.Position - start
-            obj.Position = UDim2.new(sp.X.Scale, sp.X.Offset + d.X, sp.Y.Scale, sp.Y.Offset + d.Y)
+            obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
         end
     end)
 end
-drag(header, main)
-drag(icon, icon)
+makeDraggable(header, main)
+makeDraggable(icon, icon)
+
+print("[SkyZenHub] Loaded")
+
+-- Selesaikan loading, lalu tampilkan window
+local remaining = math.max(0, LOAD_TIME - (os.clock() - loadStart) - 0.6)
+local stages = {
+    {0.68, "Loading modules..."},
+    {0.84, "Preparing features..."},
+    {0.96, "Almost ready..."},
+}
+for _, st in ipairs(stages) do
+    local d = remaining / #stages
+    setProgress(st[1], st[2], d)
+    task.wait(d)
+end
+setProgress(1, "Ready", 0.4)
+task.wait(0.6)
+
+local mainScale = Instance.new("UIScale", main)
+mainScale.Scale = 0.85
+main.Visible = true
+TS:Create(mainScale, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+TS:Create(loader, TweenInfo.new(0.35), {GroupTransparency = 1}):Play()
+task.wait(0.4)
+loader:Destroy()
